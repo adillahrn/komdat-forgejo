@@ -32,8 +32,6 @@ Proyek **Komunikasi Data dan Jaringan Komputer (KDJK)**
 
 ## Sekilas Tentang
 
-[`^ kembali ke atas ^`](#)
-
 **Forgejo** adalah platform hosting kode sumber berbasis **Git** yang gratis, *open source*, dan dapat dipasang di server sendiri (*self-hosted*). Fungsinya mirip **GitHub** atau **GitLab**, tetapi seluruh data repositori berada di server milik kita sendiri.
 
 Forgejo ditulis dalam bahasa pemrograman **Go** sehingga dikemas sebagai satu aplikasi yang ringan dan hemat memori. Aplikasi ini lahir sebagai *fork* dari **Gitea** dan dikelola oleh komunitas nirlaba (Codeberg e.V.). Fitur utamanya antara lain:
@@ -48,8 +46,6 @@ Forgejo ditulis dalam bahasa pemrograman **Go** sehingga dikemas sebagai satu ap
 Pada proyek ini Forgejo dipasang pada VM **Ubuntu 24.04** di **Microsoft Azure** (Azure for Students), menggunakan **Docker Compose** dengan database **PostgreSQL**, serta **Nginx** sebagai *reverse proxy* dengan sertifikat HTTPS dari **Let's Encrypt**.
 
 ## Instalasi
-
-[`^ kembali ke atas ^`](#)
 
 #### Kebutuhan Sistem :
 
@@ -247,8 +243,6 @@ Alamat sudah memakai gembok HTTPS:
 
 ## Konfigurasi
 
-[`^ kembali ke atas ^`](#)
-
 Konfigurasi Forgejo dapat diatur lewat *environment variable* berformat `FORGEJO__bagian__KUNCI` pada `docker-compose.yml`. Setelah mengubahnya, terapkan dengan `docker compose up -d` dari direktori `~/forgejo`.
 
 #### Batas upload file
@@ -296,8 +290,6 @@ Agar server tidak kehabisan memori, penggunaan RAM container Forgejo dapat dibat
 - **Webhook:** setiap repositori dapat mengirim notifikasi ke layanan lain (misalnya Discord atau Telegram) lewat **Settings > Webhooks**.
 
 ## Maintenance
-
-[`^ kembali ke atas ^`](#)
 
 #### Backup database dan data
 
@@ -369,7 +361,6 @@ Mematikan server dari dalam Ubuntu **tidak** menghentikan biaya. Gunakan tombol 
 
 ## Otomatisasi
 
-[`^ kembali ke atas ^`](#)
 
 Jika kita ingin memasang Forgejo di server baru tanpa mengetik semua perintah satu per satu, tersedia dua *script shell*:
 
@@ -390,8 +381,6 @@ $ ./setup.sh forgejo-kdjk.malaysiawest.cloudapp.azure.com email@contoh.com
 [ISI: screenshot hasil uji `setup.sh` pada server/VM bersih, atau hapus kalimat ini jika tidak diuji]
 
 ## Cara Pemakaian
-
-[`^ kembali ke atas ^`](#)
 
 Antarmuka Forgejo mirip dengan GitHub sehingga mudah dipelajari. Berikut fungsi-fungsi utamanya beserta data contoh yang sudah kami isi.
 
@@ -446,8 +435,6 @@ $ git clone ssh://git@forgejo-kdjk.malaysiawest.cloudapp.azure.com:2222/NAMA/pro
 
 ## Pembahasan
 
-[`^ kembali ke atas ^`](#)
-
 Menurut kami, **Forgejo** adalah pilihan yang baik bagi tim kecil, kampus, atau individu yang ingin memiliki layanan Git sendiri dengan biaya rendah. Instalasinya sederhana, penggunaannya mudah karena mirip GitHub, dan kebutuhan sumber dayanya kecil. Berikut kelebihannya :
 
 - Ringan. Dapat berjalan pada server dengan RAM sekitar 1 GB.
@@ -485,8 +472,6 @@ Jika dibandingkan dengan layanan sejenis, berikut perbedaannya (informasi bersum
 
 ## Referensi
 
-[`^ kembali ke atas ^`](#)
-
 1. [Installation with Docker](https://forgejo.org/docs/latest/admin/installation/docker/) - Forgejo
 2. [Forgejo Documentation](https://forgejo.org/docs/latest/) - Forgejo
 3. [Configuration Cheat Sheet](https://forgejo.org/docs/latest/admin/config-cheat-sheet/) - Forgejo
@@ -495,4 +480,3 @@ Jika dibandingkan dengan layanan sejenis, berikut perbedaannya (informasi bersum
 6. [Certbot](https://certbot.eff.org/) - Electronic Frontier Foundation
 7. [pg_dump](https://www.postgresql.org/docs/current/app-pgdump.html) - PostgreSQL
 8. [Azure for Students](https://learn.microsoft.com/en-us/azure/education-hub/about-azure-for-students) - Microsoft
-9. [ISI: tambahkan sumber lain yang kamu pakai]

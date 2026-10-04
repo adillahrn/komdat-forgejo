@@ -2,9 +2,9 @@
 
 > Catatan: teks bertanda `[ISI: ...]` dan `git.contoh.com` harus kamu ganti dengan data kelompokmu sendiri.
 
-**Kelompok:** [ISI: nomor kelompok]
-**Anggota:** [ISI: nama dan NIM]
-**URL aplikasi:** https://git.contoh.com
+**Kelompok:** 8
+**Anggota:** 
+**URL aplikasi:** 
 
 
 ## Struktur Repositori

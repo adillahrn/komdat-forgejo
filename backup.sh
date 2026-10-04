@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Backup database dan data Forgejo.
-# Jadwal cron (Minggu 02.00): 0 2 * * 0 /home/USER/projek-forgejo/scripts/backup.sh
+# Backup database PostgreSQL dan data Forgejo.
+# Pemakaian manual : ~/scripts/backup.sh
+# Jadwal cron      : 0 2 * * 0 /home/azureuser/scripts/backup.sh >> /home/azureuser/backup/backup.log 2>&1
 set -euo pipefail
 
 BACKUP_DIR="${BACKUP_DIR:-$HOME/backup}"

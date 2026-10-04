@@ -12,10 +12,8 @@ backup/
 *.sql
 *.sql.gz
 *.tar.gz
-*.zip
 
 # File sistem / editor
 .DS_Store
 Thumbs.db
 .vscode/
-*.swp

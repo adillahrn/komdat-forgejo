@@ -1,100 +1,106 @@
 # Aplikasi Web "Forgejo"
 
-> Catatan: teks bertanda `[ISI: ...]` dan `git.contoh.com` harus kamu ganti dengan data kelompokmu sendiri.
+Proyek Komunikasi Data dan Jaringan Komputer
+Kelompok [ISI: nomor kelompok] | Anggota: [ISI: nama dan NIM]
+Aplikasi yang sedang berjalan: https://forgejo-kdjk.malaysiawest.cloudapp.azure.com
 
-**Kelompok:** 8
-**Anggota:** 
-**URL aplikasi:** 
-
-
-## Struktur Repositori
-
-```
-projek-forgejo/
-├── README.md              # laporan
-├── docker-compose.yml     # Forgejo + PostgreSQL
-├── .env.example           
-├── nginx/forgejo.conf     # konfigurasi reverse proxy
-├── scripts/
-│   ├── install.sh         # instalasi otomatis dari nol
-│   └── backup.sh          # backup database dan data
-├── docs/                 
-├── img/                   # screenshot untuk laporan
-├── CONTRIBUTING.md        # alur kerja Git tim
-└── .gitignore
-```
+| [Sekilas Tentang](#sekilas-tentang) | [Instalasi](#instalasi) | [Konfigurasi](#konfigurasi) | [Maintenance](#maintenance) | [Otomatisasi](#otomatisasi) | [Cara Pemakaian](#cara-pemakaian) | [Pembahasan](#pembahasan) | [Referensi](#referensi) |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 
 ## Sekilas Tentang
 
-Forgejo adalah platform hosting kode sumber berbasis Git yang bisa dipasang sendiri (self-hosted), sehingga fungsinya mirip GitHub atau GitLab tetapi berjalan di server milik sendiri. Aplikasi ini ditulis dengan bahasa Go dan dirilis sebagai satu binary yang ringan, sehingga cocok untuk VPS berspesifikasi kecil.
+[`^ kembali ke atas ^`](#)
 
-Fitur utamanya: repositori Git (akses HTTPS dan SSH), issue tracker, pull request beserta code review, wiki, organisasi dan tim, package registry, serta CI/CD lewat Forgejo Actions. Forgejo merupakan hasil fork dari Gitea dan dikelola oleh komunitas nirlaba (Codeberg e.V.).
+**Forgejo** adalah platform hosting kode sumber berbasis **Git** yang gratis, *open source*, dan dapat dipasang di server sendiri (*self-hosted*). Fungsinya mirip **GitHub** atau **GitLab**, tetapi seluruh data repositori berada di server milik kita sendiri.
+
+Forgejo ditulis dalam bahasa pemrograman **Go** sehingga dikemas sebagai satu aplikasi yang ringan dan hemat memori. Aplikasi ini lahir sebagai *fork* dari **Gitea** dan dikelola oleh komunitas nirlaba (Codeberg e.V.). Fitur utamanya antara lain:
+
+- repositori Git dengan akses melalui HTTPS dan SSH
+- *issue tracker* lengkap dengan label dan *milestone*
+- *pull request* dan *code review*
+- *wiki* untuk dokumentasi proyek
+- organisasi dan tim dengan pengaturan hak akses
+- CI/CD melalui **Forgejo Actions**
+
+Pada proyek ini Forgejo dipasang pada VM **Ubuntu 24.04** di **Microsoft Azure** (Azure for Students), menggunakan **Docker Compose** dengan database **PostgreSQL**, serta **Nginx** sebagai *reverse proxy* dengan sertifikat HTTPS dari **Let's Encrypt**.
 
 ## Instalasi
 
-### Prasyarat
+[`^ kembali ke atas ^`](#)
 
-- VPS dengan Ubuntu 22.04/24.04, minimal 1 vCPU dan 1 GB RAM (disarankan 2 GB)
-- Domain atau subdomain yang record A-nya sudah mengarah ke IP VPS (contoh: `git.contoh.com`)
-- Port 80, 443, dan 2222 terbuka di firewall
-- Docker Engine dan Docker Compose plugin
-- Nginx sebagai reverse proxy dan Certbot untuk sertifikat HTTPS
+#### Kebutuhan Sistem :
 
+- VM/VPS dengan Ubuntu 22.04 atau 24.04 (yang kami pakai: Azure, 2 vCPU, 4 GiB RAM, lokasi Malaysia West)
+- RAM minimal 1 GB (disarankan 2 GB atau lebih)
+- Akses SSH dengan hak `sudo`
+- Domain yang mengarah ke IP server (kami memakai nama DNS dari Azure: `forgejo-kdjk.malaysiawest.cloudapp.azure.com`)
+- Port **22**, **80**, **443**, dan **2222** terbuka. Pada Azure, port ini dibuka di **Network Security Group** (menu *Networking* > *Add inbound port rule*), selain di firewall server.
+- IP publik bersifat **Static** agar tidak berubah saat VM dimatikan.
+- Docker dan Docker Compose, Nginx, serta Certbot (dipasang pada langkah di bawah)
 
-**Catatan untuk server di Azure for Students:** selain UFW di dalam server, port 22, 80, 443, dan 2222 juga harus dibuka di **Network Security Group** milik VM (menu Networking > Add inbound port rule). Alamat IP publik juga perlu diubah menjadi **Static** agar tidak berubah. Pada VM Ubuntu di Azure, nama user bawaan biasanya `azureuser`, jadi `~` pada perintah di bawah berarti `/home/azureuser`.
-
-Arsitektur:
+Arsitektur yang dibangun:
 
 ```
-Pengguna --HTTPS--> Nginx (443) --> Forgejo (127.0.0.1:3000) --> PostgreSQL
-Pengguna --SSH---->  Forgejo (2222, untuk git clone/push via SSH)
+Pengguna --HTTPS (443)--> Nginx --> Forgejo (127.0.0.1:3000) --> PostgreSQL
+Pengguna --SSH Git (2222)--------> Forgejo
 ```
 
-### Langkah instalasi
+#### Proses Instalasi :
 
-**1. Perbarui sistem dan pasang paket dasar**
+**1. Login ke server menggunakan SSH**
 
-```bash
-sudo apt update && sudo apt upgrade -y
-sudo apt install -y ca-certificates curl nginx certbot python3-certbot-nginx ufw
+Pengguna Windows dapat memakai PowerShell. Gunakan nama pengguna yang dibuat saat membuat VM (pada Azure biasanya `azureuser`).
+
+```
+$ ssh azureuser@forgejo-kdjk.malaysiawest.cloudapp.azure.com
 ```
 
-**2. Pasang Docker**
+![ssh](Screenshots/02-ssh-login.png)
 
-```bash
-curl -fsSL https://get.docker.com | sudo sh
-sudo usermod -aG docker $USER
-newgrp docker
-docker --version && docker compose version
+**2. Perbarui paket sistem**
+
+```
+$ sudo apt update
+$ sudo apt upgrade -y
 ```
 
-**3. Atur firewall**
+**3. Pasang Docker**
 
-Port SSH admin tetap 22, sedangkan Git SSH milik Forgejo dipetakan ke 2222.
-
-```bash
-sudo ufw allow 22/tcp
-sudo ufw allow 80,443/tcp
-sudo ufw allow 2222/tcp
-sudo ufw enable
 ```
+$ curl -fsSL https://get.docker.com | sudo sh
+$ sudo usermod -aG docker $USER
+$ newgrp docker
+```
+
+Pastikan Docker sudah berjalan:
+
+```
+$ docker --version
+$ docker compose version
+$ docker run hello-world
+```
+
+![docker](Screenshots/03-docker-version.png)
 
 **4. Buat direktori kerja dan file `.env`**
 
-```bash
-mkdir -p ~/forgejo && cd ~/forgejo
-cat > .env <<'EOF'
-DOMAIN=git.contoh.com
-POSTGRES_PASSWORD=GANTI_DENGAN_PASSWORD_KUAT
+File `.env` menyimpan domain dan password database. Password dibuat acak agar kuat. File ini **tidak boleh** diunggah ke GitHub.
+
+```
+$ mkdir -p ~/forgejo && cd ~/forgejo
+$ cat > .env <<EOF
+DOMAIN=forgejo-kdjk.malaysiawest.cloudapp.azure.com
+POSTGRES_PASSWORD=$(openssl rand -hex 16)
 EOF
-chmod 600 .env
+$ chmod 600 .env
 ```
 
-**5. Buat `docker-compose.yml`**
+**5. Buat file `docker-compose.yml`**
 
-Versi image mengikuti dokumentasi resmi Forgejo. Cek tag terbaru di https://forgejo.org/docs/latest/admin/installation/docker/ (saat laporan ini ditulis tag utamanya `15`).
+File ini mendefinisikan dua layanan: Forgejo dan PostgreSQL. Nomor versi image mengikuti [dokumentasi resmi Forgejo](https://forgejo.org/docs/latest/admin/installation/docker/).
 
-```yaml
+```
+$ cat > docker-compose.yml <<'EOF'
 networks:
   forgejo:
     external: false
@@ -117,6 +123,7 @@ services:
       - FORGEJO__server__SSH_DOMAIN=${DOMAIN}
       - FORGEJO__server__SSH_PORT=2222
       - FORGEJO__server__SSH_LISTEN_PORT=22
+      - FORGEJO__attachment__MAX_SIZE=100
     networks:
       - forgejo
     volumes:
@@ -141,23 +148,35 @@ services:
       - forgejo
     volumes:
       - ./postgres:/var/lib/postgresql/data
+EOF
 ```
 
-**6. Jalankan container**
+Port `3000` hanya dibuka ke `127.0.0.1`, sehingga akses dari internet harus melalui Nginx. Port `2222` dipakai untuk SSH Git.
 
-```bash
-docker compose up -d
-docker compose ps
-docker compose logs -f server   # tekan Ctrl+C untuk keluar
+**6. Jalankan Forgejo dan PostgreSQL**
+
+```
+$ docker compose up -d
+$ docker compose ps
 ```
 
-**7. Konfigurasi Nginx sebagai reverse proxy**
+Kedua container (`forgejo` dan `forgejo-db`) harus berstatus **Up**. Jika ada masalah, lihat log dengan `docker compose logs server`.
 
-```bash
-sudo tee /etc/nginx/sites-available/forgejo >/dev/null <<'EOF'
+![compose](Screenshots/04-docker-compose-ps.png)
+
+**7. Pasang Nginx dan Certbot**
+
+```
+$ sudo apt install -y nginx certbot python3-certbot-nginx
+```
+
+**8. Konfigurasi Nginx sebagai reverse proxy**
+
+```
+$ sudo tee /etc/nginx/sites-available/forgejo >/dev/null <<'EOF'
 server {
     listen 80;
-    server_name git.contoh.com;
+    server_name forgejo-kdjk.malaysiawest.cloudapp.azure.com;
 
     client_max_body_size 512M;
 
@@ -170,213 +189,287 @@ server {
     }
 }
 EOF
-sudo ln -s /etc/nginx/sites-available/forgejo /etc/nginx/sites-enabled/
-sudo nginx -t && sudo systemctl reload nginx
+$ sudo ln -s /etc/nginx/sites-available/forgejo /etc/nginx/sites-enabled/
+$ sudo nginx -t
+$ sudo systemctl reload nginx
 ```
 
-**8. Aktifkan HTTPS dengan Let's Encrypt**
+Hasil `nginx -t` harus menampilkan *syntax is ok* dan *test is successful*.
 
-```bash
-sudo certbot --nginx -d git.contoh.com
+![nginx](Screenshots/05-nginx-test.png)
+
+**9. Aktifkan HTTPS dengan Let's Encrypt**
+
+```
+$ sudo certbot --nginx -d forgejo-kdjk.malaysiawest.cloudapp.azure.com
 ```
 
-**9. Selesaikan instalasi lewat browser**
+Isi alamat email, setujui syarat layanan, dan pilih opsi pengalihan (*redirect*) dari HTTP ke HTTPS. Uji perpanjangan otomatis dengan:
 
-Buka `https://git.contoh.com`, cek halaman *Initial Configuration* (nilai database dan domain sudah terisi dari environment), lalu buka bagian *Administrator Account Settings* dan buat akun admin. Klik **Install Forgejo**.
-
-[ISI: screenshot halaman instalasi awal]
-
-## Konfigurasi (opsional)
-
-Konfigurasi bisa lewat environment variable dengan format `FORGEJO__bagian__KUNCI` di `docker-compose.yml`, atau langsung di file `forgejo/gitea/conf/app.ini`. Setelah mengubah, jalankan `docker compose up -d` lagi.
-
-**Batas upload dan ukuran file**
-
-Tambahkan di bagian `environment` pada service `server`:
-
-```yaml
-      - FORGEJO__attachment__MAX_SIZE=100        # lampiran issue/PR, satuan MB
-      - FORGEJO__repository_0x2E_upload__FILE_MAX_SIZE=100   # upload file lewat web, MB
+```
+$ sudo certbot renew --dry-run
 ```
 
-Bagian `[repository.upload]` di `app.ini` mengandung titik, sehingga pada environment variable titik itu ditulis `_0x2E_`.
+![certbot](Screenshots/06-certbot-sukses.png)
 
-Batas di Nginx (`client_max_body_size 512M`) harus lebih besar daripada nilai di atas, kalau tidak upload akan ditolak dengan galat 413.
+**10. Selesaikan instalasi lewat browser**
 
-**Menutup pendaftaran publik**
+Buka `https://forgejo-kdjk.malaysiawest.cloudapp.azure.com`. Pada halaman *Initial Configuration*, nilai database dan domain sudah terisi dari konfigurasi sehingga tidak perlu diubah. Buka bagian **Administrator Account Settings**, isi *username*, *email*, dan *password* untuk akun admin, lalu klik **Install Forgejo**.
 
-Supaya server tidak dipakai sembarang orang, matikan registrasi bebas dan buat akun lewat halaman admin:
+![instalasi](Screenshots/08-halaman-instalasi.png)
 
-```yaml
+Alamat sudah memakai gembok HTTPS:
+
+![https](Screenshots/07-https-aktif.png)
+
+## Konfigurasi
+
+[`^ kembali ke atas ^`](#)
+
+Konfigurasi Forgejo dapat diatur lewat *environment variable* berformat `FORGEJO__bagian__KUNCI` pada `docker-compose.yml`. Setelah mengubahnya, terapkan dengan `docker compose up -d` dari direktori `~/forgejo`.
+
+#### Batas upload file
+
+Ada dua tempat yang perlu dipadankan:
+
+- **Nginx:** `client_max_body_size 512M;` (sudah ada pada konfigurasi di atas)
+- **Forgejo:** `FORGEJO__attachment__MAX_SIZE=100` (lampiran *issue* dan *pull request*, dalam MB)
+
+Nilai di Nginx harus lebih besar daripada nilai di Forgejo. Jika tidak, unggahan akan ditolak dengan galat `413`.
+
+#### Menutup pendaftaran publik
+
+Agar tidak sembarang orang dapat membuat akun, matikan pendaftaran **setelah** akun admin dibuat. Tambahkan baris berikut pada bagian `environment` layanan `server`:
+
+```
       - FORGEJO__service__DISABLE_REGISTRATION=true
 ```
 
-Untuk demo, boleh dibiarkan terbuka sementara atau buat beberapa akun dummy secara manual.
+Lalu jalankan `docker compose up -d`. Akun baru kemudian dibuat oleh admin lewat **Site Administration > User Accounts > Create User Account**.
 
-**Batas memori container**
+![registrasi](Screenshots/09-registrasi-ditutup.png)
 
-Pada VPS kecil, batasi memori agar server tidak macet:
+#### Batas memori
 
-```yaml
+Agar server tidak kehabisan memori, penggunaan RAM container Forgejo dapat dibatasi. Tambahkan pada layanan `server`:
+
+```
     deploy:
       resources:
         limits:
-          memory: 768M
+          memory: 1g
 ```
 
-**Login dengan Google (OAuth2)**
+#### Plugin untuk fungsi tambahan
 
-1. Buat *OAuth client ID* di Google Cloud Console (tipe Web application). Isi *Authorized redirect URI* dengan `https://git.contoh.com/user/oauth2/google/callback`.
-2. Di Forgejo, buka **Site Administration → Identity & Access → Authentication Sources → Add Authentication Source**.
-3. Pilih tipe **OAuth2**, provider **OpenID Connect**, nama `google`, isi Client ID dan Client Secret, dan Auto Discovery URL `https://accounts.google.com/.well-known/openid-configuration`.
+- **Editor Markdown:** sudah bawaan. Pratinjau Markdown tersedia di README, *issue*, *pull request*, dan *wiki* tanpa plugin tambahan.
+- **Login dengan Google (OAuth2):**
+  1. Buat *OAuth client ID* di Google Cloud Console dengan *Authorized redirect URI* `https://forgejo-kdjk.malaysiawest.cloudapp.azure.com/user/oauth2/google/callback`.
+  2. Di Forgejo, buka **Site Administration > Identity & Access > Authentication Sources > Add Authentication Source**.
+  3. Pilih tipe **OAuth2** dengan provider **OpenID Connect**, isi nama `google`, *Client ID*, *Client Secret*, dan *Auto Discovery URL* `https://accounts.google.com/.well-known/openid-configuration`.
 
-[ISI: screenshot halaman Authentication Sources, jika dikerjakan]
+  [ISI: screenshot Authentication Sources jika dikerjakan, atau hapus bagian ini jika tidak]
 
-**Editor Markdown dan fitur lain**
+- **Webhook:** setiap repositori dapat mengirim notifikasi ke layanan lain (misalnya Discord atau Telegram) lewat **Settings > Webhooks**.
 
-Editor Markdown dengan pratinjau sudah bawaan (dipakai di README, issue, dan wiki), jadi tidak perlu plugin tambahan. Forgejo juga bisa dihubungkan dengan webhook ke layanan lain (misalnya notifikasi Discord atau Telegram) lewat menu **Settings → Webhooks** pada setiap repositori.
+## Maintenance
 
-## Maintenance (opsional)
+[`^ kembali ke atas ^`](#)
 
-**Backup**
+#### Backup database dan data
 
-Yang perlu dicadangkan ada dua hal: dump database PostgreSQL dan folder `forgejo/` (berisi repositori Git, lampiran, dan `app.ini`).
+Dua hal yang dicadangkan: *dump* database PostgreSQL dan folder `~/forgejo/forgejo` (berisi repositori Git, lampiran, dan `app.ini`). Skrip lengkapnya ada di [`backup.sh`](backup.sh).
 
-```bash
-mkdir -p ~/backup
-cd ~/forgejo
-docker exec forgejo-db pg_dump -U forgejo forgejo | gzip > ~/backup/forgejo-db-$(date +%F).sql.gz
-sudo tar czf ~/backup/forgejo-data-$(date +%F).tar.gz forgejo
+```
+$ mkdir -p ~/scripts ~/backup
+$ cp backup.sh ~/scripts/ && chmod +x ~/scripts/backup.sh
+$ ~/scripts/backup.sh
+$ ls -lh ~/backup
 ```
 
-**Restore (garis besar)**
+![backup](Screenshots/11-backup-file.png)
 
-```bash
-docker compose down
-sudo tar xzf ~/backup/forgejo-data-TANGGAL.tar.gz
-docker compose up -d db
-gunzip -c ~/backup/forgejo-db-TANGGAL.sql.gz | docker exec -i forgejo-db psql -U forgejo forgejo
-docker compose up -d
+#### Jadwal backup otomatis (cron)
+
+Backup dijalankan tiap Minggu pukul 02.00 (mengikuti jam server). Buka `crontab -e`, lalu tambahkan:
+
+```
+0 2 * * 0 /home/azureuser/scripts/backup.sh >> /home/azureuser/backup/backup.log 2>&1
 ```
 
-**Update**
+Backup yang lebih tua dari 30 hari dihapus otomatis oleh skrip.
 
-Naik versi mayor (misalnya 14 ke 15) butuh pengecekan manual. Baca *release notes* dulu, buat backup, lalu ubah tag image dan jalankan:
+![cron](Screenshots/12-crontab.png)
 
-```bash
-docker compose pull
-docker compose up -d
-docker image prune -f
+#### Uji restore
+
+Restore diuji pada container PostgreSQL sementara agar data yang sedang dipakai tidak tersentuh.
+
+```
+$ docker run -d --name pg-test -e POSTGRES_PASSWORD=test postgres:16
+$ sleep 10
+$ docker exec pg-test psql -U postgres -c "CREATE USER forgejo;"
+$ docker exec pg-test psql -U postgres -c "CREATE DATABASE forgejo_test OWNER forgejo;"
+$ gunzip -c ~/backup/forgejo-db-$(date +%F).sql.gz | docker exec -i pg-test psql -U postgres -d forgejo_test
+$ docker exec pg-test psql -U postgres -d forgejo_test -c "\dt"
+$ docker rm -f pg-test
 ```
 
-**Perpanjangan sertifikat HTTPS**
+Jika daftar tabel Forgejo muncul, berarti *backup* dapat dipulihkan.
 
-Certbot otomatis memasang timer perpanjangan. Uji dengan:
+![restore](Screenshots/13-uji-restore.png)
 
-```bash
-sudo certbot renew --dry-run
+Salinan *backup* sebaiknya juga disimpan di luar server, misalnya diunduh ke laptop dengan `scp`:
+
+```
+$ scp azureuser@forgejo-kdjk.malaysiawest.cloudapp.azure.com:~/backup/forgejo-db-TANGGAL.sql.gz .
 ```
 
-**Penjadwalan dengan cron**
+#### Update Forgejo
 
-Buka `crontab -e` dan tambahkan (backup tiap Minggu pukul 02.00 dan hapus backup yang lebih dari 30 hari):
+Buat *backup* terlebih dahulu, baca catatan rilis (terutama jika berganti versi mayor), lalu:
 
-```cron
-0 2 * * 0 /home/USER/forgejo/backup.sh
-30 2 * * 0 find /home/USER/backup -type f -mtime +30 -delete
+```
+$ cd ~/forgejo
+$ docker compose pull
+$ docker compose up -d
+$ docker image prune -f
 ```
 
-## Otomatisasi (opsional)
+#### Perpanjangan sertifikat HTTPS
 
-Dua skrip tersedia di folder [`scripts/`](scripts/):
+Certbot memasang pewaktu (*timer*) perpanjangan otomatis. Status dapat dicek dengan `sudo certbot renew --dry-run`.
 
-- [`scripts/install.sh`](scripts/install.sh): memasang paket, Docker, firewall, Forgejo + PostgreSQL, Nginx, dan HTTPS dari nol. Password database dibuat acak dan disimpan di `~/forgejo/.env`.
-- [`scripts/backup.sh`](scripts/backup.sh): backup database dan folder data, lalu menghapus backup yang lebih tua dari 30 hari.
+#### Menghemat kredit Azure
 
-Pemakaian pada Ubuntu yang bersih (domain harus sudah mengarah ke IP server):
+Mematikan server dari dalam Ubuntu **tidak** menghentikan biaya. Gunakan tombol **Stop** di portal Azure hingga status *Deallocated* jika VM tidak dipakai berhari-hari.
 
-```bash
-git clone https://github.com/USERNAME/projek-forgejo.git
-cd projek-forgejo
-chmod +x scripts/*.sh
-./scripts/install.sh git.contoh.com admin@contoh.com
+## Otomatisasi
+
+[`^ kembali ke atas ^`](#)
+
+Jika kita ingin memasang Forgejo di server baru tanpa mengetik semua perintah satu per satu, tersedia dua *script shell*:
+
+- [`setup.sh`](setup.sh): memasang paket, Docker, firewall, Forgejo dan PostgreSQL, Nginx, serta HTTPS sekaligus. Password database dibuat acak dan disimpan di `~/forgejo/.env`.
+- [`backup.sh`](backup.sh): backup database dan data Forgejo, serta menghapus backup lama.
+
+Cara memakai `setup.sh` (domain harus sudah mengarah ke IP server dan port 80, 443, 2222 sudah terbuka):
+
+```
+$ git clone https://github.com/USERNAME/projek-forgejo.git
+$ cd projek-forgejo
+$ chmod +x setup.sh backup.sh
+$ ./setup.sh forgejo-kdjk.malaysiawest.cloudapp.azure.com email@contoh.com
 ```
 
-Backup terjadwal lewat cron:
+`setup.sh` hanya untuk server **baru**. Jika `~/forgejo/.env` sudah ada, skrip berhenti sendiri agar password database yang sedang dipakai tidak tertimpa.
 
-```cron
-0 2 * * 0 /home/azureuser/projek-forgejo/scripts/backup.sh
-```
-
-[ISI: hasil uji coba skrip, misalnya screenshot keluaran `install.sh`]
+[ISI: screenshot hasil uji `setup.sh` pada server/VM bersih, atau hapus kalimat ini jika tidak diuji]
 
 ## Cara Pemakaian
 
-Bagian ini diisi setelah aplikasi berjalan dan berisi data dummy. Ambil screenshot pada tiap langkah.
+[`^ kembali ke atas ^`](#)
 
-1. **Halaman utama dan login.** Tampilan awal Forgejo dan halaman masuk. [ISI: screenshot]
-2. **Membuat akun dan organisasi.** Buat 2-3 akun dummy (misalnya `mahasiswa1`, `dosen`) dan satu organisasi (misalnya `praktikum-komdat`). [ISI: screenshot]
-3. **Membuat repositori.** Klik tombol **+ → New Repository**, isi nama, deskripsi, dan centang *Initialize repository* dengan README. [ISI: screenshot]
-4. **Clone dan push lewat HTTPS.**
-   ```bash
-   git clone https://git.contoh.com/mahasiswa1/proyek-demo.git
-   cd proyek-demo
-   echo "halo forgejo" > catatan.txt
-   git add . && git commit -m "tambah catatan" && git push
-   ```
-5. **Clone dan push lewat SSH.** Tambahkan public key di **Settings → SSH/GPG Keys**, lalu:
-   ```bash
-   git clone ssh://git@git.contoh.com:2222/mahasiswa1/proyek-demo.git
-   ```
-6. **Issue dan label.** Buat beberapa issue (bug, fitur) dan beri label serta milestone. [ISI: screenshot]
-7. **Pull request dan code review.** Buat branch, push, buka pull request, beri komentar, lalu merge. [ISI: screenshot]
-8. **Wiki.** Aktifkan wiki repositori dan tulis satu halaman dengan Markdown. [ISI: screenshot]
-9. **Halaman admin.** Tunjukkan **Site Administration** (daftar pengguna, repositori, dan konfigurasi sistem). [ISI: screenshot]
+Antarmuka Forgejo mirip dengan GitHub sehingga mudah dipelajari. Berikut fungsi-fungsi utamanya beserta data contoh yang sudah kami isi.
 
-Data dummy yang disarankan: minimal 3 repositori, 5 issue, dan 2 pull request agar demo tidak terlihat kosong.
+**1. Login.** Buka alamat aplikasi, lalu masuk dengan akun yang sudah dibuat.
+
+![login](Screenshots/15-login.png)
+
+**2. Dashboard.** Setelah login, halaman utama menampilkan aktivitas terbaru, daftar repositori, dan organisasi.
+
+![dashboard](Screenshots/16-dashboard.png)
+
+**3. Membuat organisasi dan akun anggota.** Klik tanda **+** di pojok kanan atas, lalu pilih **New Organization**. Anggota ditambahkan lewat tab *Teams*.
+
+![organisasi](Screenshots/17-organisasi.png)
+
+**4. Membuat repositori.** Klik **+ > New Repository**, isi nama dan deskripsi, lalu centang *Initialize repository* untuk membuat README.
+
+![repo](Screenshots/18-buat-repo.png)
+
+**5. Clone dan push lewat HTTPS dan SSH.**
+
+```
+$ git clone https://forgejo-kdjk.malaysiawest.cloudapp.azure.com/NAMA/proyek-demo.git
+$ cd proyek-demo
+$ echo "halo forgejo" > catatan.txt
+$ git add . && git commit -m "tambah catatan" && git push
+```
+
+Untuk SSH, tambahkan *public key* di **Settings > SSH/GPG Keys**, lalu gunakan port **2222**:
+
+```
+$ git clone ssh://git@forgejo-kdjk.malaysiawest.cloudapp.azure.com:2222/NAMA/proyek-demo.git
+```
+
+![clone](Screenshots/19-clone-push.png)
+
+**6. Issue.** Menu **Issues** dipakai untuk mencatat tugas atau bug, lengkap dengan label, *milestone*, dan penanggung jawab.
+
+![issue](Screenshots/20-issue.png)
+
+**7. Pull request.** Buat *branch* baru, *push*, lalu buka **Pull Request**. Anggota lain dapat memberi komentar dan menyetujui sebelum digabung (*merge*).
+
+![pr](Screenshots/21-pull-request.png)
+
+**8. Wiki.** Aktifkan wiki pada pengaturan repositori, lalu tulis dokumentasi dengan format Markdown.
+
+![wiki](Screenshots/22-wiki.png)
+
+**9. Site Administration.** Akun admin dapat mengelola pengguna, repositori, organisasi, dan konfigurasi sistem dari menu ini.
+
+![admin](Screenshots/23-admin-panel.png)
 
 ## Pembahasan
 
-### Pendapat kami
+[`^ kembali ke atas ^`](#)
 
-**Kelebihan**
+Menurut kami, **Forgejo** adalah pilihan yang baik bagi tim kecil, kampus, atau individu yang ingin memiliki layanan Git sendiri dengan biaya rendah. Instalasinya sederhana, penggunaannya mudah karena mirip GitHub, dan kebutuhan sumber dayanya kecil. Berikut kelebihannya :
 
-- Ringan. Berjalan baik di VPS 1-2 GB RAM, jauh lebih hemat daripada GitLab.
-- Instalasi sederhana karena hanya butuh Docker dan sebuah database.
-- Antarmukanya mirip GitHub sehingga mudah dipelajari.
-- Bebas dan open source, dengan data sepenuhnya di server sendiri.
-- Ada issue, pull request, wiki, dan CI/CD dalam satu aplikasi.
+- Ringan. Dapat berjalan pada server dengan RAM sekitar 1 GB.
+- Instalasi relatif mudah, terutama dengan Docker Compose.
+- Antarmuka mirip GitHub sehingga mudah dipelajari.
+- Gratis dan *open source*, serta data sepenuhnya berada di server sendiri.
+- Fitur yang cukup lengkap dalam satu aplikasi: repositori, *issue*, *pull request*, *wiki*, organisasi, dan CI/CD.
+- Mendukung akses Git lewat HTTPS dan SSH.
 
-**Kekurangan**
+Kekurangan yang kami temui :
 
-- Ekosistem dan integrasi pihak ketiga lebih kecil daripada GitHub dan GitLab.
-- CI/CD (Forgejo Actions) memerlukan runner terpisah dan konfigurasi tambahan.
-- Fitur enterprise seperti dashboard keamanan yang lengkap tidak sebanyak GitLab.
-- Tanggung jawab keamanan, backup, dan update ada pada pengelola server.
-- Upgrade versi mayor perlu pengecekan manual.
+- Ekosistem dan integrasi pihak ketiga tidak sebanyak GitHub atau GitLab.
+- CI/CD (Forgejo Actions) memerlukan *runner* terpisah dan konfigurasi tambahan.
+- Keamanan, *backup*, dan pembaruan menjadi tanggung jawab pengelola server.
+- Pembaruan ke versi mayor perlu dicek manual lewat catatan rilis.
+- Konfigurasi HTTPS, reverse proxy, dan firewall harus diatur sendiri.
 
-### Perbandingan dengan aplikasi sejenis
-
-Isi tabel berikut berdasarkan pengamatan kelompok dan dokumentasi resmi masing-masing aplikasi. Verifikasi ulang angka dan fitur sebelum dikumpulkan.
+Jika dibandingkan dengan layanan sejenis, berikut perbedaannya (informasi bersumber dari dokumentasi masing-masing layanan) :
 
 | Aspek | Forgejo | GitHub | GitLab (self-hosted) | Gitea |
-|---|---|---|---|---|
-| Model | Self-hosted, open source | Layanan cloud (SaaS) | Self-hosted atau SaaS | Self-hosted, open source |
-| Kebutuhan resource | Rendah (sekitar 1 GB RAM) | Tidak perlu server sendiri | Tinggi (disarankan 4 GB RAM ke atas) | Rendah |
+| --- | --- | --- | --- | --- |
+| Model | *Self-hosted*, *open source* | Layanan cloud (SaaS) | *Self-hosted* atau SaaS | *Self-hosted*, *open source* |
+| Kebutuhan sumber daya | Rendah | Tidak perlu server sendiri | Tinggi | Rendah |
 | Kontrol data | Penuh | Dipegang penyedia | Penuh | Penuh |
-| Biaya | Gratis, hanya biaya server | Gratis dan berbayar | Edisi komunitas gratis | Gratis, hanya biaya server |
-| CI/CD | Forgejo Actions (butuh runner) | GitHub Actions | GitLab CI (sangat lengkap) | Gitea Actions |
+| Biaya | Gratis, hanya biaya server | Ada paket gratis dan berbayar | Edisi komunitas gratis, ada edisi berbayar | Gratis, hanya biaya server |
+| CI/CD | Forgejo Actions (perlu runner) | GitHub Actions | GitLab CI (sangat lengkap) | Gitea Actions |
 | Kemudahan instalasi | Mudah | Tidak perlu instalasi | Sedang sampai sulit | Mudah |
-| Tata kelola | Dikelola komunitas nirlaba | Perusahaan (Microsoft) | Perusahaan (GitLab Inc.) | Perusahaan dan komunitas |
+| Tata kelola | Komunitas nirlaba | Perusahaan | Perusahaan | Perusahaan dan komunitas |
 
-Kesimpulan: Forgejo cocok untuk kelompok kecil, kampus, atau individu yang ingin punya layanan Git sendiri dengan biaya rendah. Jika membutuhkan fitur DevOps dan keamanan yang sangat lengkap, GitLab lebih unggul. Jika kolaborasi dengan komunitas open source publik yang utama, GitHub tetap pilihan paling praktis.
+- **GitHub** paling mudah dipakai dan paling besar komunitasnya, tetapi kode tersimpan di layanan pihak ketiga.
+- **GitLab** unggul pada fitur DevOps dan keamanan yang lengkap, tetapi jauh lebih berat untuk dijalankan sendiri.
+- **Gitea** sangat mirip dengan Forgejo karena Forgejo berasal dari *fork* Gitea. Perbedaan utamanya ada pada tata kelola proyek dan arah pengembangannya.
+
+[ISI: verifikasi ulang isi tabel perbandingan ke dokumentasi masing-masing sebelum dikumpulkan]
 
 ## Referensi
 
-- Dokumentasi instalasi Docker Forgejo: https://forgejo.org/docs/latest/admin/installation/docker/
-- Dokumentasi Forgejo: https://forgejo.org/docs/latest/
-- Referensi konfigurasi `app.ini`: https://forgejo.org/docs/latest/admin/config-cheat-sheet/
-- Dokumentasi Docker Engine: https://docs.docker.com/engine/install/ubuntu/
-- Dokumentasi Nginx reverse proxy: https://docs.nginx.com/nginx/admin-guide/web-server/reverse-proxy/
-- Certbot: https://certbot.eff.org/
-- [ISI: tambahkan sumber lain yang kamu pakai]
+[`^ kembali ke atas ^`](#)
+
+1. [Installation with Docker](https://forgejo.org/docs/latest/admin/installation/docker/) - Forgejo
+2. [Forgejo Documentation](https://forgejo.org/docs/latest/) - Forgejo
+3. [Configuration Cheat Sheet](https://forgejo.org/docs/latest/admin/config-cheat-sheet/) - Forgejo
+4. [Install Docker Engine on Ubuntu](https://docs.docker.com/engine/install/ubuntu/) - Docker
+5. [Nginx Reverse Proxy](https://docs.nginx.com/nginx/admin-guide/web-server/reverse-proxy/) - Nginx
+6. [Certbot](https://certbot.eff.org/) - Electronic Frontier Foundation
+7. [pg_dump](https://www.postgresql.org/docs/current/app-pgdump.html) - PostgreSQL
+8. [Azure for Students](https://learn.microsoft.com/en-us/azure/education-hub/about-azure-for-students) - Microsoft
+9. [ISI: tambahkan sumber lain yang kamu pakai]

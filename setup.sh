@@ -127,6 +127,36 @@ sudo systemctl reload nginx
 echo "==> Mengaktifkan HTTPS"
 sudo certbot --nginx -d "$DOMAIN" -m "$EMAIL" --agree-tos --non-interactive --redirect
 
+echo "==> Memasang skrip backup dan jadwal mingguan"
+mkdir -p "$HOME/scripts" "$HOME/backup"
+chmod 700 "$HOME/backup"
+
+cat > "$HOME/scripts/backup.sh" <<'BACKUP_EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+
+BACKUP_DIR="$HOME/backup"
+APP_DIR="$HOME/forgejo"
+KEEP_DAYS=30
+DATE="$(date +%F)"
+
+mkdir -p "$BACKUP_DIR"
+cd "$APP_DIR"
+
+docker exec forgejo-db pg_dump -U forgejo forgejo | gzip > "$BACKUP_DIR/forgejo-db-$DATE.sql.gz"
+sudo tar czf "$BACKUP_DIR/forgejo-data-$DATE.tar.gz" forgejo
+
+find "$BACKUP_DIR" -type f -mtime +"$KEEP_DAYS" -delete
+
+echo "Backup $DATE selesai di $BACKUP_DIR"
+BACKUP_EOF
+chmod +x "$HOME/scripts/backup.sh"
+
+CRON_LINE="0 2 * * 0 $HOME/scripts/backup.sh >> $HOME/backup/backup.log 2>&1"
+( crontab -l 2>/dev/null | grep -vF "scripts/backup.sh" || true; echo "$CRON_LINE" ) | crontab -
+
 echo
 echo "Selesai. Buka https://$DOMAIN untuk membuat akun admin."
 echo "Password database tersimpan di $WORKDIR/.env (jangan dibagikan)."
+
+echo "Backup otomatis: tiap Minggu 02.00 (jam server), hasil di $HOME/backup."

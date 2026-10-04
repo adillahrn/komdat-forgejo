@@ -218,7 +218,7 @@ $ sudo systemctl reload nginx
 
 Hasil `nginx -t` harus menampilkan *syntax is ok* dan *test is successful*.
 
-![nginx](Screenshots/05-nginx-test.png)
+![nginx](Screenshots/05-nginx-test.jpeg)
 
 **9. Aktifkan HTTPS dengan Let's Encrypt**
 
@@ -232,7 +232,7 @@ Isi alamat email, setujui syarat layanan, dan pilih opsi pengalihan (*redirect*)
 $ sudo certbot renew --dry-run
 ```
 
-![certbot](Screenshots/06-certbot-sukses.png)
+![certbot](Screenshots/06-cerbot-sukses.jpeg)
 
 **10. Selesaikan instalasi lewat browser**
 
@@ -242,7 +242,7 @@ Buka `https://forgejo-kdjk.malaysiawest.cloudapp.azure.com`. Pada halaman *Initi
 
 Alamat sudah memakai gembok HTTPS:
 
-![https](Screenshots/07-https-aktif.png)
+![https](Screenshots/07-https-aktif.jpeg)
 
 ## Konfigurasi
 
@@ -393,7 +393,7 @@ Antarmuka Forgejo mirip dengan GitHub sehingga mudah dipelajari. Berikut fungsi-
 
 **2. Dashboard.** Setelah login, halaman utama menampilkan aktivitas terbaru, daftar repositori, dan organisasi.
 
-![dashboard](Screenshots/16-dashboard.png)
+![dashboard](Screenshots/16-dashboard.jpeg)
 
 **3. Membuat organisasi dan akun anggota.** Klik tanda **+** di pojok kanan atas, lalu pilih **New Organization**. Anggota ditambahkan lewat tab *Teams*.
 

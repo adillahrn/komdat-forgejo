@@ -1,4 +1,4 @@
-<h1 align="center"> <img src="./Screenshots/01-ssh-login.png" alt="SSH Login"></h1>
+<h1 align="center"> <img src="./Screenshots/forgejologo.png" alt="Logo Forgejo"></h1>
 
 # Aplikasi Web "Forgejo"
 

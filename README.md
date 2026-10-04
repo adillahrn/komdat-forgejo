@@ -1,3 +1,5 @@
+<h1 align="center"> <img src="./Screenshots/01-ssh-login.png" alt="SSH Login"></h1>
+
 # Aplikasi Web "Forgejo"
 
 Proyek **Komunikasi Data dan Jaringan Komputer (KDJK)**
@@ -74,7 +76,7 @@ Pengguna Windows dapat memakai PowerShell. Gunakan nama pengguna yang dibuat saa
 $ ssh azureuser@forgejo-kdjk.malaysiawest.cloudapp.azure.com
 ```
 
-![ssh](Screenshots/02-ssh-login.png)
+![ssh](Screenshots/01-ssh-login.png)
 
 **2. Perbarui paket sistem**
 
@@ -82,6 +84,7 @@ $ ssh azureuser@forgejo-kdjk.malaysiawest.cloudapp.azure.com
 $ sudo apt update
 $ sudo apt upgrade -y
 ```
+![ssh](Screenshots/02-ssh-login.png)
 
 **3. Pasang Docker**
 

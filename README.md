@@ -1,11 +1,34 @@
 # Aplikasi Web "Forgejo"
 
-Proyek Komunikasi Data dan Jaringan Komputer
-Kelompok [ISI: nomor kelompok] | Anggota: [ISI: nama dan NIM]
-Aplikasi yang sedang berjalan: https://forgejo-kdjk.malaysiawest.cloudapp.azure.com
+Proyek **Komunikasi Data dan Jaringan Komputer (KDJK)**
 
-| [Sekilas Tentang](#sekilas-tentang) | [Instalasi](#instalasi) | [Konfigurasi](#konfigurasi) | [Maintenance](#maintenance) | [Otomatisasi](#otomatisasi) | [Cara Pemakaian](#cara-pemakaian) | [Pembahasan](#pembahasan) | [Referensi](#referensi) |
-| --- | --- | --- | --- | --- | --- | --- | --- |
+**Kelompok 8**
+
+| NIM | Nama |
+|---|---|
+| M0403241072 | Adillah Ridwan |
+| M0403241054 | Annisa Azzahra |
+| M0403241164 | Nailah Adianti Hermawan |
+| M0403241185 | Tesalonika Natalie Sofi Siregar |
+| M0403241139 | Ananta Sakha Pramodya |
+
+**Aplikasi yang sedang berjalan:**  
+[Forgejo](https://forgejo-kdjk.malaysiawest.cloudapp.azure.com)
+
+---
+
+## Daftar Isi
+
+- [Sekilas Tentang](#sekilas-tentang)
+- [Instalasi](#instalasi)
+- [Konfigurasi](#konfigurasi)
+- [Maintenance](#maintenance)
+- [Otomatisasi](#otomatisasi)
+- [Cara Pemakaian](#cara-pemakaian)
+- [Pembahasan](#pembahasan)
+- [Referensi](#referensi)
+
+---
 
 ## Sekilas Tentang
 

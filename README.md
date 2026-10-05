@@ -73,7 +73,7 @@ Pengguna --SSH Git (2222)--------> Forgejo
 Pengguna Windows dapat memakai PowerShell. Gunakan nama pengguna yang dibuat saat membuat VM (pada Azure biasanya `azureuser`).
 
 ```
-$ ssh azureuser@forgejo-kdjk.malaysiawest.cloudapp.azure.com
+ssh azureuser@forgejo-kdjk.malaysiawest.cloudapp.azure.com
 ```
 
 ![ssh](Screenshots/01-ssh-login.png)
